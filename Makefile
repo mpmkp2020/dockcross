@@ -7,7 +7,7 @@
 DOCKER = docker
 
 # Docker organization to pull the images from
-ORG = dockcross
+ORG = quay.io/pypa
 
 # Directory where to generate the dockcross script for each images (e.g bin/dockcross-manylinux1-x64)
 BIN = ./bin
@@ -48,7 +48,7 @@ ifeq ("$(CIRCLECI)", "true")
 endif
 
 # Tag images with date and Git short hash in addition to revision
-TAG := $(shell date '+%Y%m%d')-$(shell git rev-parse --short HEAD)
+TAG := $(shell date '+%Y-%m-%d')-$(shell git rev-parse --short HEAD)
 
 #
 # images: This target builds all IMAGES (because it is the first one, it is built by default)
@@ -102,6 +102,8 @@ web-wasm.test: web-wasm
 # manylinux2014-aarch64
 #
 manylinux2014-aarch64: manylinux2014-aarch64/Dockerfile
+	@# Copy libstdc++ from quay.io/pypa/manylinux2014_aarch64 container
+	docker run -v `pwd`:/host --rm -it -e LIB_PATH=/host/$@/xc_script/ quay.io/pypa/manylinux2014_aarch64 bash -c "PASS=1 /host/$@/xc_script/docker_setup_scrpits/copy_libstd.sh"
 	mkdir -p $@/imagefiles && cp -r imagefiles $@/
 	$(DOCKER) build -t $(ORG)/manylinux2014-aarch64:latest \
 		-t $(ORG)/manylinux2014-aarch64:$(TAG) \
@@ -111,6 +113,8 @@ manylinux2014-aarch64: manylinux2014-aarch64/Dockerfile
 		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 		-f manylinux2014-aarch64/Dockerfile .
 	rm -rf $@/imagefiles
+	@# libstdc++ is coppied into image, now remove it
+	docker run -v `pwd`:/host --rm -it quay.io/pypa/manylinux2014_aarch64 bash -c "rm -rf /host/$@/xc_script/usr"
 
 manylinux2014-aarch64.test: manylinux2014-aarch64
 	$(DOCKER) run $(RM) $(ORG)/manylinux2014-aarch64 > $(BIN)/dockcross-manylinux2014-aarch64 && chmod +x $(BIN)/dockcross-manylinux2014-aarch64

@@ -20,6 +20,22 @@ RUN \
     qemu-system-arm && \
   yum clean all
 
+# Removing incompatible curl library
+RUN rm -rf /usr/local/lib/libcurl.so.4
+
+# Setting up docker inside docker to use cibuildwheel
+RUN yum install -y yum-utils && \
+    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
+    yum install -y docker-ce docker-ce-cli containerd.io
+RUN cd /usr/xcc/aarch64-unknown-linux-gnueabi/lib/gcc/aarch64-unknown-linux-gnueabi/9.3.0/include && \
+    wget https://gist.githubusercontent.com/nhatminhle/5181506/raw/541482dbc61862bba8a156edaae57faa2995d791/stdatomic.h
+
+# Running scripts to cross compile python and copy libstdc++ into toolcain
+ADD manylinux2014-aarch64/xc_script /tmp/
+RUN PASS=2 /tmp/docker_setup_scrpits/copy_libstd.sh
+RUN /tmp/docker_setup_scrpits/prepare_cross_env.sh
+RUN rm -rf /tmp/docker_setup_scrpits
+
 # The CROSS_TRIPLE is a configured alias of the "aarch64-unknown-linux-gnueabi" target.
 ENV CROSS_TRIPLE aarch64-unknown-linux-gnueabi
 
@@ -50,7 +66,7 @@ ENV AUDITWHEEL_PLAT manylinux2014_$AUDITWHEEL_ARCH
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
-ARG IMAGE=dockcross/manylinux2014-aarch64
+ARG IMAGE=quay.io/pypa/manylinux2014-aarch64
 ARG VERSION=latest
 ARG VCS_REF
 ARG VCS_URL

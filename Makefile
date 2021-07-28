@@ -7,7 +7,8 @@
 DOCKER = docker
 
 # Docker organization to pull the images from
-ORG = quay.io/pypa
+#ORG = quay.io/pypa
+ORG = odidev
 
 # Directory where to generate the dockcross script for each images (e.g bin/dockcross-manylinux1-x64)
 BIN = ./bin
@@ -102,11 +103,11 @@ web-wasm.test: web-wasm
 # manylinux2014-aarch64
 #
 manylinux2014-aarch64: manylinux2014-aarch64/Dockerfile
-	@# Copy libstdc++ from quay.io/pypa/manylinux2014_aarch64 container
+	@# Get libstdc++ from quay.io/pypa/manylinux2014_aarch64 container
 	docker run -v `pwd`:/host --rm -it -e LIB_PATH=/host/$@/xc_script/ quay.io/pypa/manylinux2014_aarch64 bash -c "PASS=1 /host/$@/xc_script/docker_setup_scrpits/copy_libstd.sh"
 	mkdir -p $@/imagefiles && cp -r imagefiles $@/
-	$(DOCKER) build -t $(ORG)/manylinux2014-aarch64:latest \
-		-t $(ORG)/manylinux2014-aarch64:$(TAG) \
+	$(DOCKER) build -t $(ORG)/manylinux2014_aarch64:latest \
+		-t $(ORG)/manylinux2014_aarch64:$(TAG) \
 		--build-arg IMAGE=$(ORG)/manylinux2014-aarch64 \
 		--build-arg VCS_REF=`git rev-parse --short HEAD` \
 		--build-arg VCS_URL=`git config --get remote.origin.url` \

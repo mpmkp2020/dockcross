@@ -25,8 +25,10 @@ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 export AUDITWHEEL_POLICY=manylinux2014
 
 # Python to be cross compiled
-declare -A buildpy
-buildpy=( ["3.6.13"]="cp36-cp36m" ["3.7.10"]="cp37-cp37m" ["3.8.9"]="cp38-cp38"  ["3.9.4"]="cp39-cp39")
+#declare -A buildpy=( ["3.6.13"]="cp36-cp36m" ["3.7.10"]="cp37-cp37m" ["3.8.9"]="cp38-cp38"  ["3.9.4"]="cp39-cp39"  ["3.10.0"]="cp310-cp310")
+#python_vers="3.6.13 3.7.10 3.8.9 3.9.4 3.10.0"
+# 3.10 is not supported in crossenv for now
+declare -A buildpy=( ["3.6.13"]="cp36-cp36m" ["3.7.10"]="cp37-cp37m" ["3.8.9"]="cp38-cp38"  ["3.9.4"]="cp39-cp39")
 python_vers="3.6.13 3.7.10 3.8.9 3.9.4"
 
 # Adding cross compiler path in PATH env variable
@@ -37,22 +39,26 @@ CROSS_PY_BASE=/opt/_internal
 CROSS_PY_BASE_LN=/opt/python
 BUILD_DIR=/tmp/builds
 LN=ln
-
+sub_rel=""
 # Loop over each python version and cross compile it
 for python_ver in $python_vers; do
     echo ${python_ver}
     echo ${buildpy[$python_ver]}
 
+    #if [ $python_ver = "3.10.0" ]; then
+    #    sub_rel="b2"
+    #fi
+
     mkdir -p ${BUILD_DIR} && cd ${BUILD_DIR}
-    wget https://www.python.org/ftp/python/${python_ver}/Python-${python_ver}.tgz
-    tar xzf Python-${python_ver}.tgz
-    cd Python-${python_ver}
+    wget https://www.python.org/ftp/python/${python_ver}/Python-${python_ver}${sub_rel}.tgz
+    tar xzf Python-${python_ver}${sub_rel}.tgz
+    cd Python-${python_ver}${sub_rel}
 
     # Setting up build python path required by crassenv
     BUILD_PYBIN=${CROSS_PY_BASE_LN}/${buildpy[$python_ver]}/bin
     BUILD_PIP=${BUILD_PYBIN}/pip3
     BUILD_PYTHON=${BUILD_PYBIN}/python3
-    
+
     # Setting up target python required by crossenv
     TARGET_PYPATH=${CROSS_PY_BASE}/xc/xcpython-${python_ver}
     TARGET_PYTHON=${TARGET_PYPATH}/bin/python3
@@ -62,7 +68,7 @@ for python_ver in $python_vers; do
     CROSS_ENV_LN=${CROSS_PY_BASE_LN}/${buildpy[$python_ver]}-xc
     CROSS_ENV_PIP=${CROSS_ENV_LN}/cross/bin/pip
 
-    # Adding build python path as it is required to 
+    # Adding build python path as it is required to
     # configure the python for cross compilation
     PATH=${BUILD_PYBIN}:${OLD_PATH}
     export PATH
